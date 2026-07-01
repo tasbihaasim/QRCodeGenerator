@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+
+        p {
+            color: #888;
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #000;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #000;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #333;
+        }
+
+        button:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
+        #result {
+            margin-top: 32px;
+            text-align: center;
+            display: none;
+        }
+
+        #qrImage {
+            width: 200px;
+            height: 200px;
+            border-radius: 8px;
+        }
+
+        #downloadBtn {
+            margin-top: 16px;
+            background: white;
+            color: black;
+            border: 1px solid #ddd;
+        }
+
+        #downloadBtn:hover {
+            background: #f5f5f5;
+        }
+
+        #error {
+            margin-top: 12px;
+            color: red;
+            font-size: 0.9rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>QR Code Generator</h1>
+    <p>Paste a link and get a QR code instantly.</p>
+
+    <input type="text" id="urlInput" placeholder="https://example.com" />
+    <button id="generateBtn" onclick="generate()">Generate</button>
+    <p id="error">Something went wrong. Please try again.</p>
+
+    <div id="result">
+        <img id="qrImage" alt="QR Code" />
+        <br>
+        <button id="downloadBtn" onclick="download()">Download</button>
+    </div>
+</div>
+
+<script>
+    async function generate() {
+        const url = document.getElementById("urlInput").value.trim();
+        const btn = document.getElementById("generateBtn");
+        const error = document.getElementById("error");
+        const result = document.getElementById("result");
+
+        if (!url) return;
+
+        btn.disabled = true;
+        btn.textContent = "Generating...";
+        error.style.display = "none";
+        result.style.display = "none";
+
+        try {
+            const response = await fetch("/generate", {
+                method: "POST",
+                body: url
+            });
+
+            if (!response.ok) throw new Error();
+
+            const blob = await response.blob();
+            const imageUrl = URL.createObjectURL(blob);
+            document.getElementById("qrImage").src = imageUrl;
+            result.style.display = "block";
+
+        } catch (e) {
+            error.style.display = "block";
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Generate";
+        }
+    }
+
+    function download() {
+        const img = document.getElementById("qrImage");
+        const a = document.createElement("a");
+        a.href = img.src;
+        a.download = "qrcode.png";
+        a.click();
+    }
+
+    // allow pressing Enter to generate
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("urlInput").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") generate();
+        });
+    });
+</script>
+</body>
+</html>
